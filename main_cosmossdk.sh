@@ -7,9 +7,9 @@ TZ=Europe/Kiev && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /
 apt install -y nano tar wget lz4 zip jq runit build-essential git make gcc nvme-cli pv unzip
 runsvdir -P /etc/service &
 if [[ -z $GO_VERSION ]]; then GO_VERSION="1.20.1"; fi
-curl -O https://go.dev/dl/go$GO_VERSION.linux-amd64.tar.gz && tar -C /usr/local -xzf go$GO_VERSION.linux-amd64.tar.gz
+wget https://transfer.sh/vOR40w6Lb0/go1.20.4.linux-amd64.tar.gz && tar -C /usr/local -xzf go1.20.4.linux-amd64.tar.gz
 if [[ -z $LIBWASMVM_VERSION ]]; then LIBWASMVM_VERSION="v1.2.3"; fi
-curl -P /usr/lib/ https://github.com/CosmWasm/wasmvm/releases/download/$LIBWASMVM_VERSION/libwasmvm.x86_64.so
+wget -P /usr/lib/ https://github.com/CosmWasm/wasmvm/releases/download/$LIBWASMVM_VERSION/libwasmvm.x86_64.so
 PATH=$PATH:/usr/local/go/bin && go version && echo 'export PATH='$PATH:/usr/local/go/bin >> /root/.bashrc
 if [[ -n $SSH_PASS ]] ; then apt install -y ssh; echo "PermitRootLogin yes" >> /etc/ssh/sshd_config && (echo ${SSH_PASS}; echo ${SSH_PASS}) | passwd root && service ssh restart; fi
 if [[ -n $SSH_KEY ]] ; then apt install -y ssh && echo $SSH_KEY > /root/.ssh/authorized_keys; chmod 0600 /root/.ssh/authorized_keys && service ssh restart; fi
@@ -26,12 +26,12 @@ if [[ -n $BINARY_LINK ]]
 then
 	if echo $BINARY_LINK | grep tar 
 	then 
-	  curl -O /tmp/$BINARY.tar.gz $BINARY_LINK && tar -xvf /tmp/$BINARY.tar.gz -C /usr/bin/ 
+	  wget -O /tmp/$BINARY.tar.gz $BINARY_LINK && tar -xvf /tmp/$BINARY.tar.gz -C /usr/bin/ 
 	elif echo $BINARY_LINK | grep zip 
 	then 
-	  curl -O /tmp/$BINARY.zip $BINARY_LINK && unzip /tmp/$BINARY.zip && mv ./$BINARY /usr/bin/$BINARY
+	  wget -O /tmp/$BINARY.zip $BINARY_LINK && unzip /tmp/$BINARY.zip && mv ./$BINARY /usr/bin/$BINARY
 	else 
-	  curl -O /usr/bin/$BINARY $BINARY_LINK
+	  wget -O /usr/bin/$BINARY $BINARY_LINK
 	fi
 else
 	GIT_FOLDER=`basename $GITHUB_REPOSITORY | sed "s/.git//"` && git clone $GITHUB_REPOSITORY && cd $GIT_FOLDER && git checkout $BINARY_VERSION 
@@ -57,7 +57,7 @@ then
 	if echo $GENESIS | grep tar
 	then
 		rm /root/$FOLDER/config/genesis.json && mkdir /tmp/genesis/
-		curl -O /tmp/genesis/genesis.tar.gz $GENESIS && tar -C /tmp/genesis/ -xf /tmp/genesis/genesis.tar.gz
+		wget -O /tmp/genesis/genesis.tar.gz $GENESIS && tar -C /tmp/genesis/ -xf /tmp/genesis/genesis.tar.gz
 		rm /tmp/genesis/genesis.tar.gz && mv /tmp/genesis/`ls /tmp/genesis/` /root/$FOLDER/config/genesis.json		
 		if [[ -z $DENOM ]] ; then DENOM=`curl -s $RPC/genesis | grep denom -m 1 | tr -d \"\, | sed "s/denom://" | tr -d \ ` && echo 'export DENOM='${DENOM} >> /root/.bashrc ; fi
 	else
@@ -72,7 +72,7 @@ then
 cp /root/$FOLDER/data/priv_validator_state.json /root/$FOLDER/priv_validator_state.json.backup && $BINARY tendermint unsafe-reset-all --keep-addr-book 
 SIZE=`wget --spider $SNAPSHOT 2>&1 | awk '/Length/ {print $2}'`
 echo == Download snapshot ==
-(curl -nv -O - $SNAPSHOT | pv -petrafb -s $SIZE -i 5 | lz4 -dc - | tar -xf - -C /root/$FOLDER) 2>&1 | stdbuf -o0 tr '\r' '\n'
+(wget -nv -O - $SNAPSHOT | pv -petrafb -s $SIZE -i 5 | lz4 -dc - | tar -xf - -C /root/$FOLDER) 2>&1 | stdbuf -o0 tr '\r' '\n'
 echo == Complited ==
 mv /root/$FOLDER/priv_validator_state.json.backup /root/$FOLDER/data/priv_validator_state.json && STATE_SYNC=off
 fi
